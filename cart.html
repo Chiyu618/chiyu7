@@ -19,21 +19,39 @@
         <h2 :title="title">
             <!-- 插值文本 -->
             {{title}}
-            <!-- 列表渲染 -->
-            <div v-for="c in courses" :key="c" :class="{active: selectedCourse === c}" @click="selectedCourse = c">
-                {{ c }}
-            </div>
-
         </h2>
         <!-- 用户输入 -->
         <p>
             <input type="text" v-model="course" v-on:keydown.enter="addCourse">
             <button @click="addCourse">新增</button>
         </p>
-        {{course}}
+
+        <!-- 列表渲染 -->
+        <p v-if="courses.length == 0">啥也没有</p>
+        <!-- 列表渲染 -->
+        <div class="course-list" v-else>
+            <div v-for="c in courses" :key="c" :class="{active: selectedCourse === c}" @click="selectedCourse = c">
+                {{ c }}
+            </div>
+        </div>
+        <!-- 总数 -->
+        <p>
+            <!-- 总数{{courses.length + '个'}} -->
+            <!-- 总数{{total}} -->
+            总数{{totalCount}}
+        </p>
     </div>
     <script src="vue.js"></script>
     <script>
+        //模拟异步数据的调用 
+        function getCourse() {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(['web1', 'web2'])
+                }, 2000);
+            })
+
+        }
         const app = new Vue({
             el: '#app',
             data() {
@@ -41,8 +59,19 @@
                     title: '购物车',
                     course: '',
                     selectedCourse: '',
-                    courses: ['web1', 'web2']
+                    courses: [],
+                    totalCount: 0
                 }
+            },
+            //异步数据 写在这两个没有太大区别 因为创建很快
+            async created() {
+                //组建实例已创建，由于未挂载 dom元素没建立
+                const courses = await getCourse()
+                this.courses = courses
+            },
+            mounted() {
+                //dom元素已创建
+                ;
             },
             methods: {
                 addCourse() {
@@ -50,6 +79,26 @@
                     this.courses.push(this.course)
                     //2.清空course
                     this.course = ''
+                }
+            },
+            computed: {
+                total() {
+                    return this.courses.length + '个'
+                }
+            },
+            //默认不立刻执行 初始化不执行
+            // watch: {
+            //     courses(newValue, oldValue) {
+            //         this.totalCount = newValue.length + '个'
+            //     }
+            // },
+            watch: {
+                courses: {
+                    immediate: true, //立即执行1次
+                    // deep: true,
+                    handler(newValue, oldValue) {
+                        this.totalCount = newValue.length + '个'
+                    }
                 }
             },
         })
